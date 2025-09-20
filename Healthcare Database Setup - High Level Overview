@@ -1,0 +1,46 @@
+```bash
+# 🏥 Healthcare Database Setup - High Level Workflow
+
+# 1️⃣ Install Docker Desktop
+#    ↓
+#    - Download: https://www.docker.com/products/docker-desktop
+#    - Follow OS-specific instructions
+#    - Verify installation with: docker --version
+
+# 2️⃣ Pull & Run PostgreSQL in Docker
+#    ↓
+docker pull postgres:15
+docker run --name healthcare-db -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres:15
+docker ps  # Verify container is running
+
+# 3️⃣ Install DBeaver
+#    ↓
+#    - Download: https://dbeaver.io/download/
+#    - Install on your local machine
+
+# 4️⃣ Connect DBeaver to PostgreSQL
+#    ↓
+#    Connection settings:
+#      • Host: localhost
+#      • Port: 5432
+#      • Database: postgres
+#      • Username: postgres
+#      • Password: mysecretpassword
+#    - Test connection ✅
+#    - Save connection for easy access
+
+# 5️⃣ Create & Import Tables in DBeaver
+#    ↓
+#    - Create raw tables for unprocessed CSV/Excel data
+#    - Create cleaned tables with proper data types
+#    - Import data using DBeaver’s Data Import Wizard
+
+# 6️⃣ Verify Database
+#    ↓
+#    - Run basic SELECT queries to ensure data loaded correctly
+#    - Inspect table structure and relationships
+
+# 7️⃣ Cleanup Docker (when finished)
+#    ↓
+docker stop healthcare-db
+docker rm healthcare-db
