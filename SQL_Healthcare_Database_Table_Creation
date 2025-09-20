@@ -1,0 +1,175 @@
+-- =====================================
+-- PostgreSQL Version and Current Database
+-- =====================================
+-- Display PostgreSQL version
+SELECT version();
+
+-- Display current database
+SELECT current_database();
+
+-- =====================================
+-- HRRP Readmissions Table (Raw)
+-- =====================================
+-- Drop the table if it exists to avoid conflicts
+DROP TABLE IF EXISTS hrrp_readmissions_raw;
+
+-- Create the raw HRRP readmissions table with all text columns
+CREATE TABLE hrrp_readmissions_raw (
+    facility_name TEXT,
+    facility_id TEXT,
+    state TEXT,
+    measure_name TEXT,
+    number_of_discharges TEXT,
+    footnote TEXT,
+    excess_readmission_ratio TEXT,
+    predicted_readmission_rate TEXT,
+    expected_readmission_rate TEXT,
+    number_of_readmissions TEXT,
+    start_date TEXT,
+    end_date TEXT
+);
+
+-- Preview the first 10 rows of raw HRRP data
+SELECT * FROM hrrp_readmissions_raw
+LIMIT 10;
+
+-- =====================================
+-- HRRP Readmissions Table (Cleaned)
+-- =====================================
+-- Drop the cleaned table if it exists
+DROP TABLE IF EXISTS hrrp_readmissions;
+
+-- Create a cleaned HRRP readmissions table
+-- Replacing 'N/A' or 'Too Few to Report' with NULL and converting numeric fields
+CREATE TABLE hrrp_readmissions AS
+SELECT
+    facility_name,
+    facility_id,
+    state,
+    measure_name,
+    NULLIF(number_of_discharges, 'N/A')::INT AS number_of_discharges,
+    footnote,
+    NULLIF(excess_readmission_ratio, 'N/A')::NUMERIC(8,4) AS excess_readmission_ratio,
+    NULLIF(predicted_readmission_rate, 'N/A')::NUMERIC(8,4) AS predicted_readmission_rate,
+    NULLIF(expected_readmission_rate, 'N/A')::NUMERIC(8,4) AS expected_readmission_rate,
+    CASE
+        WHEN number_of_readmissions IN ('N/A', 'Too Few to Report') THEN NULL
+        ELSE number_of_readmissions::INT
+    END AS number_of_readmissions,
+    TO_DATE(NULLIF(start_date, 'N/A'), 'MM/DD/YYYY') AS start_date,
+    TO_DATE(NULLIF(end_date, 'N/A'), 'MM/DD/YYYY') AS end_date
+FROM hrrp_readmissions_raw;
+
+-- Count the total rows in the cleaned HRRP table
+SELECT COUNT(*) FROM hrrp_readmissions;
+
+-- Preview the first 10 rows of cleaned HRRP data
+SELECT * 
+FROM hrrp_readmissions
+LIMIT 10;
+
+-- =====================================
+-- Hospital General Info Table (Raw)
+-- =====================================
+-- Drop raw table if it exists
+DROP TABLE IF EXISTS hospital_general_info_raw;
+
+-- Create raw hospital info table with all text columns
+CREATE TABLE hospital_general_info_raw (
+    facility_id TEXT,
+    facility_name TEXT,
+    address TEXT,
+    city_town TEXT,
+    state TEXT,
+    zip_code TEXT,
+    county_parish TEXT,
+    telephone_number TEXT,
+    hospital_type TEXT,
+    hospital_ownership TEXT,
+    emergency_services TEXT,
+    meets_criteria_for_birthing_friendly_designation TEXT,
+    hospital_overall_rating TEXT,
+    hospital_overall_rating_footnote TEXT,
+    mort_group_measure_count TEXT,
+    count_of_facility_mort_measures TEXT,
+    count_of_mort_measures_better TEXT,
+    count_of_mort_measures_no_different TEXT,
+    count_of_mort_measures_worse TEXT,
+    mort_group_footnote TEXT,
+    safety_group_measure_count TEXT,
+    count_of_facility_safety_measures TEXT,
+    count_of_safety_measures_better TEXT,
+    count_of_safety_measures_no_different TEXT,
+    count_of_safety_measures_worse TEXT,
+    safety_group_footnote TEXT,
+    readm_group_measure_count TEXT,
+    count_of_facility_readm_measures TEXT,
+    count_of_readm_measures_better TEXT,
+    count_of_readm_measures_no_different TEXT,
+    count_of_readm_measures_worse TEXT,
+    readm_group_footnote TEXT,
+    pt_exp_group_measure_count TEXT,
+    count_of_facility_pt_exp_measures TEXT,
+    pt_exp_group_footnote TEXT,
+    te_group_measure_count TEXT,
+    count_of_facility_te_measures TEXT,
+    te_group_footnote TEXT
+);
+
+-- Preview first rows of raw hospital info
+SELECT * FROM hospital_general_info_raw
+LIMIT 10;
+
+-- =====================================
+-- Hospital General Info Table (Cleaned)
+-- =====================================
+-- Drop cleaned table if it exists
+DROP TABLE IF EXISTS hospital_general_info;
+
+-- Create cleaned hospital info table
+-- Replace 'Not Available' with NULL and cast numeric fields to INT
+CREATE TABLE hospital_general_info_clean AS
+SELECT
+    facility_id,
+    facility_name,
+    address,
+    city_town,
+    state,
+    zip_code,
+    county_parish,
+    telephone_number,
+    hospital_type,
+    hospital_ownership,
+    emergency_services,
+    meets_criteria_for_birthing_friendly_designation,
+    NULLIF(hospital_overall_rating, 'Not Available') AS hospital_overall_rating,
+    NULLIF(hospital_overall_rating_footnote, 'Not Available') AS hospital_overall_rating_footnote,
+    CAST(NULLIF(mort_group_measure_count, 'Not Available') AS INT) AS mort_group_measure_count,
+    CAST(NULLIF(count_of_facility_mort_measures, 'Not Available') AS INT) AS count_of_facility_mort_measures,
+    CAST(NULLIF(count_of_mort_measures_better, 'Not Available') AS INT) AS count_of_mort_measures_better,
+    CAST(NULLIF(count_of_mort_measures_no_different, 'Not Available') AS INT) AS count_of_mort_measures_no_different,
+    CAST(NULLIF(count_of_mort_measures_worse, 'Not Available') AS INT) AS count_of_mort_measures_worse,
+    NULLIF(mort_group_footnote, 'Not Available') AS mort_group_footnote,
+    CAST(NULLIF(safety_group_measure_count, 'Not Available') AS INT) AS safety_group_measure_count,
+    CAST(NULLIF(count_of_facility_safety_measures, 'Not Available') AS INT) AS count_of_facility_safety_measures,
+    CAST(NULLIF(count_of_safety_measures_better, 'Not Available') AS INT) AS count_of_safety_measures_better,
+    CAST(NULLIF(count_of_safety_measures_no_different, 'Not Available') AS INT) AS count_of_safety_measures_no_different,
+    CAST(NULLIF(count_of_safety_measures_worse, 'Not Available') AS INT) AS count_of_safety_measures_worse,
+    NULLIF(safety_group_footnote, 'Not Available') AS safety_group_footnote,
+    CAST(NULLIF(readm_group_measure_count, 'Not Available') AS INT) AS readm_group_measure_count,
+    CAST(NULLIF(count_of_facility_readm_measures, 'Not Available') AS INT) AS count_of_facility_readm_measures,
+    CAST(NULLIF(count_of_readm_measures_better, 'Not Available') AS INT) AS count_of_readm_measures_better,
+    CAST(NULLIF(count_of_readm_measures_no_different, 'Not Available') AS INT) AS count_of_readm_measures_no_different,
+    CAST(NULLIF(count_of_readm_measures_worse, 'Not Available') AS INT) AS count_of_readm_measures_worse,
+    NULLIF(readm_group_footnote, 'Not Available') AS readm_group_footnote,
+    CAST(NULLIF(pt_exp_group_measure_count, 'Not Available') AS INT) AS pt_exp_group_measure_count,
+    CAST(NULLIF(count_of_facility_pt_exp_measures, 'Not Available') AS INT) AS count_of_facility_pt_exp_measures,
+    NULLIF(pt_exp_group_footnote, 'Not Available') AS pt_exp_group_footnote,
+    CAST(NULLIF(te_group_measure_count, 'Not Available') AS INT) AS te_group_measure_count,
+    CAST(NULLIF(count_of_facility_te_measures, 'Not Available') AS INT) AS count_of_facility_te_measures,
+    NULLIF(te_group_footnote, 'Not Available') AS te_group_footnote
+FROM hospital_general_info_raw;
+
+-- Preview first 10 rows of cleaned hospital info table
+SELECT * FROM hospital_general_info_clean
+LIMIT 10;
