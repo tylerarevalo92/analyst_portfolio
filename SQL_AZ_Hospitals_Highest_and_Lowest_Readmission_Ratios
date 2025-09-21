@@ -1,0 +1,44 @@
+-- ===========================================
+-- Query: Identify the Top 5 and Bottom 5 Hospitals in Arizona 
+--         by Excess Readmission Ratio
+-- ===========================================
+
+-- Step 1: Create a subset of Arizona hospitals with readmission data
+WITH az_hospitals AS (
+    SELECT 
+        hgi.facility_id,         -- Unique hospital identifier
+        hgi.facility_name,       -- Hospital name
+        hgi.city_town,           -- City where hospital is located
+        hr.measure_name,         -- Type of readmission measure (e.g., heart failure, pneumonia)
+        hr.excess_readmission_ratio  -- Excess readmission ratio for the hospital
+    FROM hospital_general_info_clean hgi
+    JOIN hrrp_readmissions hr 
+        ON hgi.facility_id = hr.facility_id   -- Join hospital info with readmission data
+    WHERE hgi.state = 'AZ'                     -- Filter for Arizona hospitals only
+      AND hr.excess_readmission_ratio IS NOT NULL -- Exclude missing/invalid ratios
+),
+
+-- Step 2: Rank hospitals from highest → lowest and lowest → highest
+ranked AS (
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY excess_readmission_ratio DESC) AS rank_desc, -- Highest ratios first
+        ROW_NUMBER() OVER (ORDER BY excess_readmission_ratio ASC)  AS rank_asc   -- Lowest ratios first
+    FROM az_hospitals
+)
+
+-- Step 3: Select only the Top 5 and Bottom 5 hospitals
+SELECT 
+    facility_id,
+    facility_name,
+    city_town,
+    measure_name,
+    excess_readmission_ratio,
+    CASE 
+        WHEN rank_desc <= 5 THEN 'Top 5 Highest Ratios'  -- Flag hospitals with highest ratios
+        WHEN rank_asc  <= 5 THEN 'Top 5 Lowest Ratios'   -- Flag hospitals with lowest ratios
+        ELSE NULL
+    END AS category
+FROM ranked
+WHERE rank_desc <= 5 OR rank_asc <= 5   -- Keep only the Top 5 and Bottom 5
+ORDER BY excess_readmission_ratio DESC, category;  -- Sort by ratio (high → low), then by category
